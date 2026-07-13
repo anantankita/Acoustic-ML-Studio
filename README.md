@@ -87,6 +87,3 @@ acoustic-ml-studio/
   - Graceful fallback error-handling ensuring uptime and robustness in virtualized testing environments.
 
 ---
-
-## 🎤 Interview Guide: Deep-Dive Technical Talking Points
-
