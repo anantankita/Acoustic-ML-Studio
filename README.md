@@ -90,21 +90,3 @@ acoustic-ml-studio/
 
 ## 🎤 Interview Guide: Deep-Dive Technical Talking Points
 
-If asked about this project during your interview at Recho, use these advanced talking points to showcase your expertise:
-
-### Q1: Why did you choose a CRNN architecture for Keyword Spotting (KWS)?
-> **Talking Point**: "Speech commands have structural patterns in both frequency and time. Convolutional layers (Conv2D) act as spatial feature extractors over the Mel-Spectrogram, identifying local acoustic features like formant transitions and phonemes. However, speech is inherently sequential. By feeding the flattened convolutional features into a Bidirectional GRU layer, the model captures the long-term temporal sequence of the command, regardless of speed. Bidirectional GRU is preferred over LSTM here because it has fewer parameters, leading to faster inference speeds and smaller memory footprints on edge/CPU deployments, without any loss in performance."
-
-### Q2: How does your Spectral Gating noise reduction filter work?
-> **Talking Point**: "Unlike simple time-domain filters, spectral gating operates in the time-frequency domain using the Short-Time Fourier Transform (STFT). 
-> First, it estimates the noise power spectral density (PSD) from silent segments of the audio (or via a bottom percentile cutoff). 
-> Then, it computes the signal-to-noise ratio (SNR) for each frequency bin. If the bin amplitude is close to the estimated noise floor, we suppress it using a sigmoid gating mask. 
-> Finally, we apply the inverse STFT (ISTFT) using overlap-add synthesis to reconstruct the clean waveform. 
-> To reduce 'musical noise' artifacts—which are common with spectral subtraction—I applied a smoothed gating transition and dynamic gains."
-
-### Q3: What is the difference between Dynamic Quantization and Static Quantization, and why did you choose Dynamic for this CRNN?
-> **Talking Point**: "In static quantization, both weights and activations are quantized to INT8 prior to deployment, which requires running calibration data through the model to estimate the activation ranges. In **dynamic quantization**, only the weights are quantized to INT8 ahead of time, while the activation tensors are quantized dynamically on-the-fly during inference. 
-> I chose dynamic quantization for this KWS model because recurrent networks (like GRUs/LSTMs) and linear layers are heavily bound by memory bandwidth (loading weights from cache). Quantizing weights to INT8 reduces memory traffic by 4x. Because ASR and KWS models are sensitive to activation fluctuations, dynamic quantization maintains high precision (avoiding accuracy drops) while providing immediate speedups without needing calibration datasets."
-
-### Q4: How did you design the web application to avoid external decoding dependencies?
-> **Talking Point**: "Standard HTML microphone recording yields container formats like `.webm` or `.ogg` which require complex external decoding tools like FFmpeg on the server. To make the API lightweight and robust, I designed a custom PCM WAV encoder in Javascript inside [app.js](file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/static/app.js). It intercepts the audio buffers from the browser Web Audio API, downsamples or formats them, and packages them into a standard 16-bit mono RIFF/WAV binary blob. The backend [main.py](file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/app/main.py) reads this using Python's native `wave` library, removing the need for system-level audio binary dependencies."
