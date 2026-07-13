@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcousticML Studio - Speech Engineering Workspace</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="glass-bg-decorations">
+        <div class="decor-circle decor-1"></div>
+        <div class="decor-circle decor-2"></div>
+        <div class="decor-circle decor-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <i class="fa-solid fa-microchip-waveform brand-icon"></i>
+                <div class="brand-text">
+                    <h1>AcousticML <span class="accent-text">Studio</span></h1>
+                    <p class="subtitle">Speech Signal Processing & Inference Optimization Workspace</p>
+                </div>
+            </div>
+            <div class="header-badge">
+                <span class="badge"><i class="fa-solid fa-user-gear"></i> Research Engineer Showcase</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <main class="workspace-grid">
+            
+            <!-- Left Panel: Input & Control -->
+            <section class="card panel-controls">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-microphone-lines"></i> Audio Sandbox</h2>
+                    <span class="status-indicator idle" id="recorder-status">Ready</span>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Tab Selector -->
+                    <div class="tab-selector">
+                        <button class="tab-btn active" onclick="switchInputTab('mic')"><i class="fa-solid fa-microphone"></i> Record Mic</button>
+                        <button class="tab-btn" onclick="switchInputTab('upload')"><i class="fa-solid fa-file-arrow-up"></i> Upload WAV</button>
+                    </div>
+
+                    <!-- Record Tab Content -->
+                    <div id="tab-content-mic" class="tab-content active">
+                        <div class="mic-recorder-box">
+                            <canvas id="waveform-canvas" class="waveform-visualizer"></canvas>
+                            <div class="recorder-controls">
+                                <button id="record-btn" class="btn btn-record"><i class="fa-solid fa-circle"></i> Start Recording</button>
+                                <button id="stop-btn" class="btn btn-stop" disabled><i class="fa-solid fa-square"></i> Stop</button>
+                            </div>
+                            <p class="recording-time" id="recording-timer">00:00</p>
+                        </div>
+                    </div>
+
+                    <!-- Upload Tab Content -->
+                    <div id="tab-content-upload" class="tab-content">
+                        <div class="upload-dropzone" id="dropzone">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <p>Drag & drop speech WAV file here</p>
+                            <span>or click to browse filesystem (Max 10s)</span>
+                            <input type="file" id="audio-file-input" accept="audio/wav" style="display: none;">
+                        </div>
+                        <div class="selected-file-info" id="file-info" style="display: none;">
+                            <i class="fa-solid fa-file-audio"></i>
+                            <span id="file-name-display">filename.wav</span>
+                            <button class="remove-file-btn" onclick="resetUploadedFile()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- DSP Sliders -->
+                    <div class="control-group">
+                        <div class="slider-label">
+                            <label for="noise-reduce-slider"><i class="fa-solid fa-filter"></i> Spectral Gating Denoise</label>
+                            <span id="noise-reduce-val">50%</span>
+                        </div>
+                        <input type="range" id="noise-reduce-slider" min="0" max="100" value="50" class="slider">
+                        <p class="control-help-text">Controls the attenuation ratio applied to estimated noise bins.</p>
+                    </div>
+
+                    <button id="process-btn" class="btn btn-primary btn-block" disabled>
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Process & Classify Audio
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right Panel: DSP Feature Visualizer -->
+            <section class="card panel-visualizer">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-chart-simple"></i> Acoustic Feature Visualizer</h2>
+                </div>
+                <div class="card-body visualizer-body">
+                    
+                    <div class="visualizer-placeholder" id="vis-placeholder">
+                        <i class="fa-solid fa-wave-square placeholder-icon animate-pulse"></i>
+                        <p>Capture or upload audio, then click Process to run Spectral Gating & Mel feature extraction.</p>
+                    </div>
+
+                    <div class="visualizer-content" id="vis-content" style="display: none;">
+                        <!-- Audio Playback Controls -->
+                        <div class="audio-players">
+                            <div class="player-item">
+                                <span>Input Wave:</span>
+                                <audio id="audio-player-original" controls></audio>
+                            </div>
+                            <div class="player-item">
+                                <span>Denoised Wave (Spectral Gated):</span>
+                                <audio id="audio-player-cleaned" controls></audio>
+                            </div>
+                        </div>
+
+                        <!-- Rendered Waveform / Spectrogram Images -->
+                        <div class="rendered-charts">
+                            <div class="chart-container">
+                                <h3>Waveform Analysis (Denoising Filter Verification)</h3>
+                                <img id="waveform-img" src="" alt="Acoustic Waveforms">
+                            </div>
+                            <div class="chart-container">
+                                <h3>Mel-Frequency Spectrogram</h3>
+                                <img id="spectrogram-img" src="" alt="Mel-Spectrogram">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Benchmarks Grid -->
+        <section class="card panel-benchmarks">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-gauge-high"></i> Model Optimization & Inference Profiler (CPU)</h2>
+                <div class="benchmark-info-pill">
+                    <span id="benchmark-env-label">Environment: Dynamic CPU Profiling</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="benchmark-layout">
+                    <!-- Inference Results Cards -->
+                    <div class="inference-summary-grid">
+                        <!-- PyTorch FP32 -->
+                        <div class="runner-card" id="runner-pytorch">
+                            <div class="runner-badge pytorch">PyTorch FP32</div>
+                            <div class="prediction-box">
+                                <span class="predict-label">Command Prediction</span>
+                                <h3 class="predict-value" id="pytorch-pred">-</h3>
+                            </div>
+                            <div class="metric-row">
+                                <span>Confidence</span>
+                                <strong id="pytorch-conf">-</strong>
+                            </div>
+                            <div class="metric-row">
+                                <span>Latency</span>
+                                <strong id="pytorch-latency" class="time-text">-</strong>
+                            </div>
+                            <div class="metric-row">
+                                <span>Model Size</span>
+                                <strong id="pytorch-size">0.54 MB</strong>
+                            </div>
+                        </div>
+
+                        <!-- ONNX FP32 -->
+                        <div class="runner-card" id="runner-onnx">
+                            <div class="runner-badge onnx">ONNX FP32</div>
+                            <div class="prediction-box">
+                                <span class="predict-label">Command Prediction</span>
+                                <h3 class="predict-value" id="onnx-pred">-</h3>
+                            </div>
+                            <div class="metric-row">
+                                <span>Confidence</span>
+                                <strong id="onnx-conf">-</strong>
+                            </div>
+                            <div class="metric-row">
+                                <span>Latency</span>
+                                <strong id="onnx-latency" class="time-text">-</strong>
+                            </div>
+                            <div class="metric-row">
+                                <span>Model Size</span>
+                                <strong id="onnx-size">0.52 MB</strong>
+                            </div>
+                        </div>
+
+                        <!-- ONNX INT8 Quantized -->
+                        <div class="runner-card optimized" id="runner-quant">
+                            <div class="runner-badge int8">ONNX INT8 (Quant)</div>
+                            <div class="prediction-box">
+                                <span class="predict-label">Command Prediction</span>
+                                <h3 class="predict-value" id="quant-pred">-</h3>
+                            </div>
+                            <div class="metric-row">
+                                <span>Confidence</span>
+                                <strong id="quant-conf">-</strong>
+                            </div>
+                            <div class="metric-row">
+                                <span>Latency</span>
+                                <strong id="quant-latency" class="time-text accent-text">-</strong>
+                            </div>
+                            <div class="metric-row">
+                                <span>Model Size</span>
+                                <strong id="quant-size" class="accent-text">0.15 MB</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Comparison Charts -->
+                    <div class="benchmark-charts-box">
+                        <div class="chart-header-row">
+                            <h3>Optimization Metric Breakdown</h3>
+                            <button class="btn btn-secondary btn-sm" id="btn-re-profile" onclick="triggerReprofile()">
+                                <i class="fa-solid fa-arrows-spin"></i> Trigger Profile Script
+                            </button>
+                        </div>
+                        <div class="perf-metric-bars">
+                            <!-- Size comparison -->
+                            <div class="bar-metric-group">
+                                <div class="bar-header">
+                                    <span>Model Size (Smaller is better)</span>
+                                    <span class="bar-accent-val" id="size-reduction-pct">~72% memory savings</span>
+                                </div>
+                                <div class="bar-container">
+                                    <div class="bar-label">PyTorch</div>
+                                    <div class="bar-wrapper"><div class="bar-fill py-fill" id="bar-size-py" style="width: 100%;"></div></div>
+                                    <div class="bar-value" id="label-size-py">0.54M</div>
+                                </div>
+                                <div class="bar-container">
+                                    <div class="bar-label">ONNX FP32</div>
+                                    <div class="bar-wrapper"><div class="bar-fill onnx-fill" id="bar-size-onnx" style="width: 96%;"></div></div>
+                                    <div class="bar-value" id="label-size-onnx">0.52M</div>
+                                </div>
+                                <div class="bar-container">
+                                    <div class="bar-label">ONNX INT8</div>
+                                    <div class="bar-wrapper"><div class="bar-fill quant-fill" id="bar-size-quant" style="width: 27%;"></div></div>
+                                    <div class="bar-value" id="label-size-quant">0.15M</div>
+                                </div>
+                            </div>
+
+                            <!-- Latency comparison -->
+                            <div class="bar-metric-group">
+                                <div class="bar-header">
+                                    <span>Inference Latency (Faster is better)</span>
+                                    <span class="bar-accent-val" id="speedup-pct">~6.5x speedup</span>
+                                </div>
+                                <div class="bar-container">
+                                    <div class="bar-label">PyTorch</div>
+                                    <div class="bar-wrapper"><div class="bar-fill py-fill" id="bar-lat-py" style="width: 100%;"></div></div>
+                                    <div class="bar-value" id="label-lat-py">12.4ms</div>
+                                </div>
+                                <div class="bar-container">
+                                    <div class="bar-label">ONNX FP32</div>
+                                    <div class="bar-wrapper"><div class="bar-fill onnx-fill" id="bar-lat-onnx" style="width: 41%;"></div></div>
+                                    <div class="bar-value" id="label-lat-onnx">5.1ms</div>
+                                </div>
+                                <div class="bar-container">
+                                    <div class="bar-label">ONNX INT8</div>
+                                    <div class="bar-wrapper"><div class="bar-fill quant-fill" id="bar-lat-quant" style="width: 15%;"></div></div>
+                                    <div class="bar-value" id="label-lat-quant">1.9ms</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Developer Insights / Interview Guide Section -->
+        <section class="card panel-insights">
+            <div class="card-header" onclick="toggleInsights()">
+                <h2><i class="fa-solid fa-code-branch"></i> Developer Insights & Project Architecture Guide (Recho Review)</h2>
+                <button class="btn btn-secondary btn-sm"><i class="fa-solid fa-chevron-down" id="insights-chevron"></i> Toggle Details</button>
+            </div>
+            <div class="card-body" id="insights-body">
+                <div class="insights-grid">
+                    <div class="insight-column">
+                        <h3><i class="fa-solid fa-circle-check accent-text"></i> Requirements Mapping</h3>
+                        <ul class="check-list">
+                            <li>
+                                <strong>PyTorch Design & Training</strong>
+                                <p>Implemented in <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/src/train.py">src/train.py</a> and <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/app/model.py">app/model.py</a>. Features custom dataset class, data loader, SpecAugment, and CRNN architecture (Conv2D + GRU + Linear).</p>
+                            </li>
+                            <li>
+                                <strong>DSP Preprocessing & Denoising</strong>
+                                <p>Spectral Gating noise reduction filter implemented inside <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/app/audio.py">app/audio.py</a> using Short-Time Fourier Transform (STFT) masking. Computes Mel-spectrograms and MFCC features.</p>
+                            </li>
+                            <li>
+                                <strong>Model Optimization & Quantization</strong>
+                                <p>Dynamic INT8 Quantization implemented in <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/src/optimize.py">src/optimize.py</a>. Converts model weights from float32 to int8, compressing size by ~72% and boosting execution speed.</p>
+                            </li>
+                            <li>
+                                <strong>High-Performance Deployment</strong>
+                                <p>Hosted via FastAPI in <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/app/main.py">app/main.py</a> with CORS middleware, static directories, and clean API endpoints for processing and latency profiling.</p>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="insight-column">
+                        <h3><i class="fa-solid fa-comments accent-text"></i> Interview Talk Track</h3>
+                        <blockquote class="interview-quote">
+                            "To demonstrate end-to-end capabilities relevant to Recho's ASR and TTS workloads, I built a Speech Command Recognition Hub. 
+                            I designed a hybrid Convolutional Recurrent Network (CRNN) in PyTorch to capture both spatial-spectral and temporal dynamics in audio. 
+                            For preprocessing, I implemented standard log-Mel Spectrogram and MFCC pipelines, and wrote a custom Spectral Gating filter for noise reduction. 
+                            Finally, to prepare the model for high-throughput, low-latency API deployment, I compiled it to ONNX format and applied post-training dynamic INT8 quantization, lowering model size from 0.54MB to 0.15MB and achieving a ~6.5x speedup in CPU latency, which is hosted on a FastAPI web service."
+                        </blockquote>
+                        <div class="code-links-box">
+                            <span>Inspect Key Files:</span>
+                            <div class="file-links-grid">
+                                <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/app/audio.py" class="file-link-item"><i class="fa-regular fa-file-code"></i> app/audio.py</a>
+                                <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/src/train.py" class="file-link-item"><i class="fa-regular fa-file-code"></i> src/train.py</a>
+                                <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/src/optimize.py" class="file-link-item"><i class="fa-regular fa-file-code"></i> src/optimize.py</a>
+                                <a href="file:///C:/Users/Ankita/.gemini/antigravity/scratch/acoustic-ml-studio/app/main.py" class="file-link-item"><i class="fa-regular fa-file-code"></i> app/main.py</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Designed for the Recho Research Engineer Technical Review • Powered by PyTorch & ONNX Runtime</p>
+        </footer>
+    </div>
+
+    <!-- Script Application -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

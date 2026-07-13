@@ -1,0 +1,13 @@
+fastapi>=0.100.0
+uvicorn>=0.22.0
+numpy>=1.22.0
+scipy>=1.8.0
+matplotlib>=3.5.0
+onnx>=1.14.0
+onnxruntime>=1.15.0
+python-multipart>=0.0.6
+# Note: torch and torchaudio should be installed based on your hardware configuration (CPU vs GPU).
+# Standard installs:
+# torch>=2.0.0
+# torchaudio>=2.0.0
+
